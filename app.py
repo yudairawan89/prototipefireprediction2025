@@ -71,7 +71,6 @@ st.markdown(f"""
     .section-title {{
         font-weight: 800; font-size: 18px; margin: 4px 0 12px 0;
     }}
-    /* Button – kontras & menyatu */
     .link-btn {{
         display: inline-block;
         padding: 10px 16px; border-radius: 12px; text-decoration: none;
@@ -83,23 +82,20 @@ st.markdown(f"""
     }}
     .link-btn:hover {{ transform: translateY(-1px); filter: brightness(1.02); }}
 
-    /* Header kecil card peta — hilangkan strip putih di atas */
-    .card-header {{
-        font-weight: 700; color: {MUTED};
-        margin: 0 0 12px 0;                 /* <- tidak ada margin negatif lagi */
-        padding: 8px 12px;
-        border-bottom: 1px solid {BORDER};
-        background: transparent;            /* <- transparan agar tidak muncul pita/strip */
-        border-top-left-radius: 14px;
-        border-top-right-radius: 14px;
-    }}
-
-    /* Frame map: border + radius + shadow, clip konten di dalam */
-    .map-frame {{
+    /* === MAP CARD (judul di dalam frame) === */
+    .map-card {{
         border: 1px solid {BORDER};
         border-radius: 14px;
-        overflow: hidden;
+        overflow: hidden;                  /* clip konten (map + header) */
         box-shadow: {SHADOW};
+        background: rgba(255,255,255,0.55);
+    }}
+    .map-title-bar {{
+        padding: 10px 14px;
+        font-weight: 700;
+        color: {MUTED};
+        border-bottom: 1px solid {BORDER};
+        background: rgba(255,255,255,0.55); /* senada dengan frame */
     }}
 </style>
 """, unsafe_allow_html=True)
@@ -283,10 +279,9 @@ with container:
                 """, unsafe_allow_html=True)
 
             with col_b:
-                st.markdown('<div class="metric-card glass">', unsafe_allow_html=True)
-                # Judul di frame atas, tanpa strip putih di atasnya
-                st.markdown('<div class="card-header">Peta Prediksi</div>', unsafe_allow_html=True)
-                st.markdown('<div class="map-frame">', unsafe_allow_html=True)
+                # ===== Map card: judul di dalam frame =====
+                st.markdown('<div class="map-card">', unsafe_allow_html=True)
+                st.markdown('<div class="map-title-bar">🗺️ Peta Prediksi</div>', unsafe_allow_html=True)
 
                 pekanbaru_coords = [-0.5071, 101.4478]
                 color_map = {
@@ -320,8 +315,7 @@ with container:
                 ).add_to(m)
 
                 folium_static(m, width=520, height=350)
-                st.markdown('</div>', unsafe_allow_html=True)  # close .map-frame
-                st.markdown('</div>', unsafe_allow_html=True)  # close card
+                st.markdown('</div>', unsafe_allow_html=True)  # close .map-card
 
         st.markdown('</div>', unsafe_allow_html=True)
 
