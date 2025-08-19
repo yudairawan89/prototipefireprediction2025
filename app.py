@@ -2,33 +2,112 @@ import streamlit as st
 import pandas as pd
 import joblib
 from streamlit_autorefresh import st_autorefresh
-from io import BytesIO
+from datetime import datetime
 from streamlit_folium import folium_static
 import folium
 
-# === PAGE CONFIG ===
-st.set_page_config(page_title="Smart Fire Prediction HSEL", page_icon="favicon.ico", layout="wide")
+# =========================
+# Page Config
+# =========================
+st.set_page_config(
+    page_title="Smart Fire Prediction HSEL",
+    page_icon="🔥",
+    layout="wide"
+)
 
-# === STYLE KUSTOM ===
-st.markdown("""
-    <style>
-    .main {background-color: #F9F9F9;}
-    table {width: 100%; border-collapse: collapse;}
-    th, td {border: 1px solid #ddd; padding: 8px;}
-    th {background-color: #e0e0e0; text-align: center;}
-    td {text-align: center;}
-    .section-title {
-        background-color: #1f77b4;
-        color: white;
-        padding: 10px;
-        border-radius: 6px;
-        font-weight: bold;
-    }
-    .scrollable-table { overflow-x: auto; }
-    </style>
+# =========================
+# Theming (Light/Dark Toggle)
+# =========================
+if "dark" not in st.session_state:
+    st.session_state.dark = False
+
+with st.sidebar:
+    st.markdown("### ⚙️ Tampilan")
+    st.session_state.dark = st.toggle("Dark mode", value=st.session_state.dark)
+    st.caption("Ubah tema agar kontras & aksen warna menyesuaikan.")
+
+# Palet warna dinamis
+if st.session_state.dark:
+    BG = "#0B1220"
+    PANEL = "rgba(255,255,255,0.06)"
+    TEXT = "#E8EEF9"
+    MUTED = "#9FB0C8"
+    ACCENT = "#7C3AED"   # indigo/violet
+    ACCENT2 = "#10B981"  # emerald
+    BORDER = "rgba(255,255,255,0.12)"
+    SHADOW = "0 10px 30px rgba(0,0,0,0.55)"
+    GRAD = "linear-gradient(135deg, #1E293B 0%, #0B1220 100%)"
+else:
+    BG = "#F6F7FB"
+    PANEL = "rgba(255,255,255,0.72)"
+    TEXT = "#0F172A"
+    MUTED = "#475569"
+    ACCENT = "#4F46E5"   # indigo
+    ACCENT2 = "#059669"  # emerald
+    BORDER = "rgba(15,23,42,0.08)"
+    SHADOW = "0 10px 24px rgba(2,6,23,0.08)"
+    GRAD = "linear-gradient(135deg, #EEF2FF 0%, #E6FFFB 100%)"
+
+# =========================
+# Global Styles
+# =========================
+st.markdown(f"""
+<style>
+    html, body, [data-testid="stAppViewContainer"] {{
+        background: {BG};
+        color: {TEXT};
+    }}
+    .glass {{
+        background: {PANEL};
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        border: 1px solid {BORDER};
+        border-radius: 18px;
+        box-shadow: {SHADOW};
+    }}
+    .hero {{
+        background: {GRAD};
+        border-radius: 18px;
+        padding: 22px 26px;
+        position: relative;
+        overflow: hidden;
+    }}
+    .chip {{
+        display: inline-block;
+        padding: 6px 12px;
+        border-radius: 999px;
+        font-weight: 600;
+        border: 1px solid {BORDER};
+    }}
+    .muted {{ color: {MUTED}; }}
+    .title {{
+        margin: 0; padding: 0;
+        font-size: 32px; line-height: 1.2; font-weight: 800;
+    }}
+    .sub {{
+        margin-top: 6px;
+        font-size: 15px; line-height: 1.6;
+    }}
+    .metric-card {{
+        padding: 16px; border-radius: 16px; border: 1px solid {BORDER};
+    }}
+    .section-title {{
+        font-weight: 800; font-size: 18px; margin: 4px 0 12px 0;
+    }}
+    /* Button style */
+    .link-btn {{
+        padding: 8px 16px; border-radius: 10px; text-decoration: none;
+        color: white; background: {ACCENT};
+        border: 1px solid transparent;
+        transition: transform .05s ease;
+    }}
+    .link-btn:hover {{ transform: translateY(-1px); }}
+</style>
 """, unsafe_allow_html=True)
 
-# === FUNGSI BANTUAN ===
+# =========================
+# Helpers
+# =========================
 def convert_day_to_indonesian(day_name):
     return {
         'Monday': 'Senin', 'Tuesday': 'Selasa', 'Wednesday': 'Rabu',
@@ -53,13 +132,15 @@ def convert_to_label(pred):
     }.get(pred, "Unknown")
 
 risk_styles = {
-    "Low / Rendah": ("white", "blue"),
-    "Moderate / Sedang": ("white", "green"),
-    "High / Tinggi": ("black", "yellow"),
-    "Very High / Sangat Tinggi": ("white", "red")
+    "Low / Rendah":   ("#1E3A8A", "#DBEAFE"),  # text, bg
+    "Moderate / Sedang": ("#064E3B", "#D1FAE5"),
+    "High / Tinggi":  ("#7C2D12", "#FFEDD5"),
+    "Very High / Sangat Tinggi": ("#7F1D1D", "#FEE2E2")
 }
 
-# === LOAD MODEL DAN SCALER ===
+# =========================
+# Load Model & Scaler
+# =========================
 @st.cache_resource
 def load_model():
     return joblib.load("RHSEM_IoT_Model.joblib")
@@ -71,221 +152,233 @@ def load_scaler():
 model = load_model()
 scaler = load_scaler()
 
-# === LOAD DATA TANPA CACHE ===
+# =========================
+# Data loader (Sheets CSV)
+# =========================
 def load_data():
-    # Google Sheets (format CSV)
     url = "https://docs.google.com/spreadsheets/d/1epkIp2U1okjCfXOoz_bkgey4kYa30EtmWlLB6c_911Y/export?format=csv"
     return pd.read_csv(url)
 
-# === HEADER ===
-col_left, col_mid, col_right = st.columns([1, 8, 2])
+# =========================
+# HERO HEADER
+# =========================
+st_autorefresh(interval=7000, key="refresh_realtime")
 
-with col_left:
-    st.image("logo.png", width=170)
+hero_l, hero_m, hero_r = st.columns([1.1, 7.0, 2.2])
+with hero_l:
+    st.markdown('<div class="hero glass">', unsafe_allow_html=True)
+    st.image("logo.png", width=86)
+    st.markdown('</div>', unsafe_allow_html=True)
 
-with col_mid:
-    st.markdown("""
-        <div style='margin-left: 20px;'>
-            <h2 style='margin-bottom: 0px;'>Smart Fire Prediction HSEL Model</h2>
-            <p style='font-size: 16px; line-height: 1.5; margin-top: 8px;'>
-                Sistem ini menggunakan Hybrid Stacking Ensemble Learning (HSEL) untuk memprediksi risiko kebakaran hutan secara real-time dengan tingkat akurasi tinggi.
-                Model prediksi dikembangkan dari kombinasi berbagai algoritma pembelajaran mesin yang dioptimalkan menggunakan optimasi hyperparameter untuk meningkatkan performa klasifikasi.
-                Data pengujian secara real-time berasal dari perangkat IoT yang mengukur parameter lingkungan seperti suhu, kelembapan, curah hujan, kecepatan angin, dan kelembapan tanah.
-            </p>
-        </div>
+with hero_m:
+    st.markdown('<div class="hero glass">', unsafe_allow_html=True)
+    st.markdown(f"""
+        <h1 class="title">Smart Fire Prediction HSEL</h1>
+        <p class="sub muted">
+            Prediksi <b>risiko kebakaran hutan</b> secara real-time berbasis
+            <b>Hybrid Stacking Ensemble Learning</b> dengan data sensor lingkungan.
+            Aksen warna: <span style="color:{ACCENT}">Indigo</span> & <span style="color:{ACCENT2}">Emerald</span>.
+        </p>
+        <a class="link-btn" href="https://docs.google.com/spreadsheets/d/1epkIp2U1okjCfXOoz_bkgey4kYa30EtmWlLB6c_911Y/edit?gid=0#gid=0" target="_blank">Data Cloud</a>
     """, unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
-    col_btn = st.columns([10, 1])[1]
-    with col_btn:
+with hero_r:
+    st.markdown('<div class="hero glass">', unsafe_allow_html=True)
+    c1, c2 = st.columns(2, gap="small")
+    with c1:
+        st.image("logo.png", use_container_width=True)
+    with c2:
+        st.image("upi.png", use_container_width=True)
+    st.markdown('</div>', unsafe_allow_html=True)
+
+st.markdown("<br>", unsafe_allow_html=True)
+
+# =========================
+# REALTIME PREDICTION
+# =========================
+df = load_data()
+container = st.container()
+with container:
+    box = st.container()
+    with box:
+        st.markdown('<div class="glass" style="padding:18px;">', unsafe_allow_html=True)
+        st.markdown('<div class="section-title">Hasil Prediksi Terkini</div>', unsafe_allow_html=True)
+
+        if df is None or df.empty:
+            st.warning("Data belum tersedia atau kosong di Google Sheets.")
+            st.markdown('</div>', unsafe_allow_html=True)
+        else:
+            # Rename kolom
+            df = df.rename(columns={
+                'Timestamp': 'Waktu',
+                'Suhu': 'Tavg: Temperatur rata-rata (°C)',
+                'Kelembapan Udara': 'RH_avg: Kelembapan rata-rata (%)',
+                'Curah Hujan': 'RR: Curah hujan (mm)',
+                'Kecepatan Angin': 'ff_avg: Kecepatan angin rata-rata (m/s)',
+                'Kelembapan Tanah': 'Kelembaban Permukaan Tanah',
+            })
+
+            fitur = [
+                'Tavg: Temperatur rata-rata (°C)',
+                'RH_avg: Kelembapan rata-rata (%)',
+                'RR: Curah hujan (mm)',
+                'ff_avg: Kecepatan angin rata-rata (m/s)',
+                'Kelembaban Permukaan Tanah'
+            ]
+
+            missing = [c for c in fitur + ['Waktu'] if c not in df.columns]
+            if missing:
+                st.error("Kolom wajib tidak ditemukan di Sheets: " + ", ".join(missing))
+                st.dataframe(df.head(), use_container_width=True)
+                st.markdown('</div>', unsafe_allow_html=True)
+                st.stop()
+
+            clean_df = df[fitur].copy()
+            for col in fitur:
+                clean_df[col] = (
+                    clean_df[col].astype(str)
+                    .str.replace(',', '.', regex=False)
+                    .astype(float)
+                    .fillna(0)
+                )
+            clean_df = clean_df.apply(pd.to_numeric, errors='coerce').fillna(0)
+
+            scaled_all = scaler.transform(clean_df)
+            predictions = [convert_to_label(p) for p in model.predict(scaled_all)]
+            df["Prediksi Kebakaran"] = predictions
+
+            last_row = df.iloc[-1]
+            last_num = clean_df.iloc[-1]
+            waktu = pd.to_datetime(last_row["Waktu"])
+            hari = convert_day_to_indonesian(waktu.strftime("%A"))
+            bulan = convert_month_to_indonesian(waktu.strftime("%B"))
+            tanggal = waktu.strftime(f"%d {bulan} %Y")
+            risk_label = last_row["Prediksi Kebakaran"]
+            risk_text, risk_bg = risk_styles.get(risk_label, ("#111827", "#E5E7EB"))
+
+            # ------------------ Metric Cards ------------------
+            m1, m2, m3, m4, m5, m6 = st.columns(6)
+            m1.metric("🌡 Suhu (°C)", f"{last_num[fitur[0]]:.1f}")
+            m2.metric("💧 RH (%)", f"{last_num[fitur[1]]:.1f}")
+            m3.metric("🌧 Curah (mm)", f"{last_num[fitur[2]]:.1f}")
+            m4.metric("💨 Angin (m/s)", f"{last_num[fitur[3]]:.1f}")
+            m5.metric("🪴 Tanah (%)", f"{last_num[fitur[4]]:.1f}")
+            m6.metric("🔥 Risiko", risk_label)
+
+            st.markdown("<br>", unsafe_allow_html=True)
+
+            # ------------------ Risk Badge + Last Updated ------------------
+            col_a, col_b = st.columns([1.2, 1.2])
+            with col_a:
+                st.markdown(f"""
+                    <div class="metric-card glass">
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <span class="chip" style="background:{risk_bg}; color:{risk_text}">🔥 {risk_label}</span>
+                            <span class="muted">Terakhir diperbarui: <b>{hari}, {tanggal}</b></span>
+                        </div>
+                        <div class="muted" style="margin-top:8px;">
+                            Lokasi: <b>Pekanbaru</b> · Koordinat: <code>-0.5071, 101.4478</code>
+                        </div>
+                    </div>
+                """, unsafe_allow_html=True)
+
+            with col_b:
+                # Map card
+                st.markdown('<div class="metric-card glass">', unsafe_allow_html=True)
+                st.markdown('<div class="muted" style="margin-bottom:6px;">Peta Prediksi</div>', unsafe_allow_html=True)
+                pekanbaru_coords = [-0.5071, 101.4478]
+                color_map = {
+                    "Low / Rendah": "blue",
+                    "Moderate / Sedang": "green",
+                    "High / Tinggi": "orange",
+                    "Very High / Sangat Tinggi": "red"
+                }
+                marker_color = color_map.get(risk_label, "gray")
+
+                popup_text = folium.Popup(f"""
+                    <div style='width: 230px; font-size: 13px; line-height: 1.5;'>
+                    <b>Prediksi:</b> {risk_label}<br>
+                    <b>Suhu:</b> {last_num[fitur[0]]:.1f} °C<br>
+                    <b>Kelembapan:</b> {last_num[fitur[1]]:.1f} %<br>
+                    <b>Curah Hujan:</b> {last_num[fitur[2]]:.1f} mm<br>
+                    <b>Kecepatan Angin:</b> {last_num[fitur[3]]:.1f} m/s<br>
+                    <b>Kelembaban Tanah:</b> {last_num[fitur[4]]:.1f} %<br>
+                    <b>Waktu:</b> {last_row['Waktu']}
+                    </div>
+                """, max_width=250)
+
+                m = folium.Map(location=pekanbaru_coords, zoom_start=11, tiles="CartoDB positron")
+                folium.Circle(
+                    location=pekanbaru_coords, radius=3000,
+                    color=marker_color, fill=True, fill_color=marker_color, fill_opacity=0.3
+                ).add_to(m)
+                folium.Marker(
+                    location=pekanbaru_coords, popup=popup_text,
+                    icon=folium.Icon(color=marker_color, icon="info-sign")
+                ).add_to(m)
+
+                folium_static(m, width=520, height=350)
+                st.markdown('</div>', unsafe_allow_html=True)
+
+        st.markdown('</div>', unsafe_allow_html=True)
+
+# =========================
+# INFO SECTIONS (Accordion)
+# =========================
+left, right = st.columns(2)
+with left:
+    with st.expander("ℹ️ Tentang Model", expanded=False):
+        st.markdown("""
+        **HSEL (Hybrid Stacking Ensemble Learning)** menggabungkan beberapa algoritma
+        pembelajaran mesin dengan *stacked generalization* dan optimasi hyperparameter.
+        Sistem menerima input: **Suhu, RH, Curah Hujan, Angin, Kelembaban Tanah** dari IoT.
+        Output berupa level risiko: *Low, Moderate, High, Very High*.
+        """)
+
+with right:
+    with st.expander("📊 Cara Membaca Level Risiko", expanded=False):
+        st.markdown("""
+        - **Low**: kondisi aman, potensi kecil, pemantauan rutin.
+        - **Moderate**: waspada, lakukan patroli berkala.
+        - **High**: siaga, siapkan sumber daya pemadaman.
+        - **Very High**: kondisi kritis, lakukan mitigasi segera.
+        """)
+
+# =========================
+# Risk Legend (ringkas, modern)
+# =========================
+st.markdown("<br>", unsafe_allow_html=True)
+st.markdown('<div class="glass" style="padding:16px;">', unsafe_allow_html=True)
+st.markdown('<div class="section-title">Legenda Tingkat Risiko</div>', unsafe_allow_html=True)
+
+legend_cols = st.columns(4)
+legend_data = [
+    ("Low / Rendah", "#DBEAFE", "#1E3A8A", "Intensitas rendah, mudah dikendalikan."),
+    ("Moderate / Sedang", "#D1FAE5", "#064E3B", "Masih dapat dikendalikan."),
+    ("High / Tinggi", "#FFEDD5", "#7C2D12", "Sulit dikendalikan."),
+    ("Very High / Sangat Tinggi", "#FEE2E2", "#7F1D1D", "Sangat sulit dikendalikan."),
+]
+for (lab, bgc, tc, desc), col in zip(legend_data, legend_cols):
+    with col:
         st.markdown(
-            """
-            <a href='https://docs.google.com/spreadsheets/d/1epkIp2U1okjCfXOoz_bkgey4kYa30EtmWlLB6c_911Y/edit?gid=0#gid=0' target='_blank'>
-            <button style='padding: 6px 16px; background-color: #1f77b4; color: white; border: none; border-radius: 4px; cursor: pointer;'>Data Cloud</button>
-            </a>
+            f"""
+            <div class="metric-card" style="background:{bgc}; color:{tc};">
+                <b>{lab}</b><br>
+                <span style="color:{tc}; font-size:13px;">{desc}</span>
+            </div>
             """,
             unsafe_allow_html=True
         )
+st.markdown('</div>', unsafe_allow_html=True)
 
-with col_right:
-    r1, r2 = st.columns(2)
-    with r1:
-        # perbaikan: gunakan use_container_width (bukan use_column_width)
-        st.image("logo.png", use_container_width=True)
-    with r2:
-        st.image("upi.png", use_container_width=True)
-
-st.markdown("<hr style='margin-top: 10px; margin-bottom: 25px;'>", unsafe_allow_html=True)
-
-# === PREDIKSI REALTIME DENGAN AUTOREFRESH ===
-realtime = st.container()
-with realtime:
-    st_autorefresh(interval=7000, key="refresh_realtime")
-    df = load_data()
-
-    st.markdown("<div class='section-title'>Hasil Prediksi Data Realtime</div>", unsafe_allow_html=True)
-
-    if df is None or df.empty:
-        st.warning("Data belum tersedia atau kosong di Google Sheets.")
-    else:
-        # Penyesuaian nama kolom
-        df = df.rename(columns={
-            'Timestamp': 'Waktu',
-            'Suhu': 'Tavg: Temperatur rata-rata (°C)',
-            'Kelembapan Udara': 'RH_avg: Kelembapan rata-rata (%)',
-            'Curah Hujan': 'RR: Curah hujan (mm)',
-            'Kecepatan Angin': 'ff_avg: Kecepatan angin rata-rata (m/s)',
-            'Kelembapan Tanah': 'Kelembaban Permukaan Tanah',
-        })
-
-        fitur = [
-            'Tavg: Temperatur rata-rata (°C)',
-            'RH_avg: Kelembapan rata-rata (%)',
-            'RR: Curah hujan (mm)',
-            'ff_avg: Kecepatan angin rata-rata (m/s)',
-            'Kelembaban Permukaan Tanah'
-        ]
-
-        # Validasi kolom
-        missing = [c for c in fitur + ['Waktu'] if c not in df.columns]
-        if missing:
-            st.error("Kolom wajib tidak ditemukan di Sheets: " + ", ".join(missing))
-            st.dataframe(df.head(), use_container_width=True)
-            st.stop()
-
-        # Pembersihan nilai numerik
-        clean_df = df[fitur].copy()
-        for col in fitur:
-            clean_df[col] = (
-                clean_df[col].astype(str)
-                .str.replace(',', '.', regex=False)
-                .astype(float)
-                .fillna(0)
-            )
-        clean_df = clean_df.apply(pd.to_numeric, errors='coerce').fillna(0)
-
-        # Prediksi
-        scaled_all = scaler.transform(clean_df)
-        predictions = [convert_to_label(p) for p in model.predict(scaled_all)]
-        df["Prediksi Kebakaran"] = predictions
-
-        # Ringkasan baris terakhir
-        last_row = df.iloc[-1]
-        last_num = clean_df.iloc[-1]
-        waktu = pd.to_datetime(last_row['Waktu'])
-        hari = convert_day_to_indonesian(waktu.strftime('%A'))
-        bulan = convert_month_to_indonesian(waktu.strftime('%B'))
-        tanggal = waktu.strftime(f'%d {bulan} %Y')
-        risk_label = last_row["Prediksi Kebakaran"]
-        font, bg = risk_styles.get(risk_label, ("black", "white"))
-
-        sensor_df = pd.DataFrame({
-            "Variabel": fitur,
-            "Value": [f"{float(last_num[col]):.1f}" for col in fitur]
-        })
-
-        # Dua kolom (peta + ringkasan)
-        col_kiri, col_tengah = st.columns([1.2, 1.2])
-
-        with col_kiri:
-            st.markdown("<h5 style='text-align: center;'>Data Sensor Realtime</h5>", unsafe_allow_html=True)
-            sensor_html = "<table style='width: 100%; border-collapse: collapse;'>"
-            sensor_html += "<thead><tr><th>Variabel</th><th>Value</th></tr></thead><tbody>"
-            for i in range(len(sensor_df)):
-                var = sensor_df.iloc[i, 0]
-                val = sensor_df.iloc[i, 1]
-                sensor_html += f"<tr><td style='padding:6px;'>{var}</td><td style='padding:6px;'>{val}</td></tr>"
-            sensor_html += "</tbody></table>"
-            st.markdown(sensor_html, unsafe_allow_html=True)
-
-            st.markdown(
-                f"<p style='background-color:{bg}; color:{font}; padding:10px; border-radius:8px; font-weight:bold;'>"
-                f"Pada hari {hari}, tanggal {tanggal}, lahan ini diprediksi memiliki tingkat resiko kebakaran: "
-                f"<span style='text-decoration: underline; font-size: 22px;'>{risk_label}</span></p>",
-                unsafe_allow_html=True
-            )
-
-        with col_tengah:
-            st.markdown("<h5 style='text-align: center;'>Visualisasi Peta Lokasi Prediksi Kebakaran</h5>", unsafe_allow_html=True)
-            pekanbaru_coords = [-0.5071, 101.4478]
-            color_map = {
-                "Low / Rendah": "blue",
-                "Moderate / Sedang": "green",
-                "High / Tinggi": "orange",
-                "Very High / Sangat Tinggi": "red"
-            }
-            marker_color = color_map.get(risk_label, "gray")
-
-            popup_text = folium.Popup(f"""
-                <div style='width: 230px; font-size: 13px; line-height: 1.5;'>
-                <b>Prediksi:</b> {risk_label}<br>
-                <b>Suhu:</b> {last_num[fitur[0]]:.1f} °C<br>
-                <b>Kelembapan:</b> {last_num[fitur[1]]:.1f} %<br>
-                <b>Curah Hujan:</b> {last_num[fitur[2]]:.1f} mm<br>
-                <b>Kecepatan Angin:</b> {last_num[fitur[3]]:.1f} m/s<br>
-                <b>Kelembaban Tanah:</b> {last_num[fitur[4]]:.1f} %<br>
-                <b>Waktu:</b> {last_row['Waktu']}
-                </div>
-            """, max_width=250)
-
-            m = folium.Map(location=pekanbaru_coords, zoom_start=11)
-            folium.Circle(
-                location=pekanbaru_coords,
-                radius=3000,
-                color=marker_color,
-                fill=True,
-                fill_color=marker_color,
-                fill_opacity=0.3
-            ).add_to(m)
-            folium.Marker(
-                location=pekanbaru_coords,
-                popup=popup_text,
-                icon=folium.Icon(color=marker_color, icon="info-sign")
-            ).add_to(m)
-
-            folium_static(m, width=450, height=350)
-
-# === TABEL TINGKAT RISIKO ===
-st.markdown("<div class='section-title'>Tabel Tingkat Resiko dan Intensitas Kebakaran</div>", unsafe_allow_html=True)
-st.markdown("""
-<div class="scrollable-table" style="margin-bottom: 25px;">
-<table style='width: 100%; border-collapse: collapse;'>
-    <thead>
-        <tr>
-            <th style='background-color:#e0e0e0;'>Warna</th>
-            <th style='background-color:#e0e0e0;'>Tingkat Resiko / Intensitas</th>
-            <th style='background-color:#e0e0e0;'>Keterangan</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr style='background-color:blue; color:white;'>
-            <td>Blue</td><td>Low / Rendah</td><td style='text-align:left; padding-left: 20px;'>Tingkat resiko kebakaran rendah. Intensitas api pada kategori rendah. Api mudah dikendalikan, cenderung akan padam dengan sendirinya.</td>
-        </tr>
-        <tr style='background-color:green; color:white;'>
-            <td>Green</td><td>Moderate / Sedang</td><td style='text-align:left; padding-left: 20px;'>Tingkat resiko kebakaran sedang. Intensitas api pada kategori sedang. Api relatif masih cukup mudah dikendalikan.</td>
-        </tr>
-        <tr style='background-color:yellow; color:black;'>
-            <td>Yellow</td><td>High / Tinggi</td><td style='text-align:left; padding-left: 20px;'>Tingkat resiko kebakaran tinggi. Intensitas api pada kategori tinggi. Api sulit dikendalikan.</td>
-        </tr>
-        <tr style='background-color:red; color:white;'>
-            <td>Red</td><td>Very High / Sangat Tinggi</td><td style='text-align:left; padding-left: 20px;'>Tingkat resiko kebakaran sangat tinggi. Intensitas api pada kategori sangat tinggi. Api sangat sulit dikendalikan.</td>
-        </tr>
-    </tbody>
-</table>
-</div>
-""", unsafe_allow_html=True)
-
-# === FOOTER ===
-st.markdown("<br><hr>", unsafe_allow_html=True)
-st.markdown("""
-<div style='
-    margin-top: 20px;
-    background-color: black;
-    padding: 10px 20px;
-    border-radius: 10px;
-    text-align: center;
-    color: white;
-'>
-    <p style='margin: 0; font-size: 30px; font-weight: bold; line-height: 1.2;'>Smart Fire Prediction HSEL Model</p>
-    <p style='margin: 0; font-size: 13px; line-height: 1.2;'>Dikembangkan oleh Mahasiswa Universitas Putera Indonesia YPTK Padang Tahun 2026</p>
+# =========================
+# Footer
+# =========================
+year = datetime.now().year
+st.markdown("<br>", unsafe_allow_html=True)
+st.markdown(f"""
+<div class="glass" style="padding:14px; text-align:center;">
+  <span class="muted">© {year} Smart Fire Prediction HSEL · Crafted with ❤ · Theme: Indigo & Emerald</span>
 </div>
 """, unsafe_allow_html=True)
