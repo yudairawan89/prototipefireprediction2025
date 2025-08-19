@@ -33,7 +33,6 @@ st.markdown(f"""
         background: {BG};
         color: {TEXT};
     }}
-
     .chip {{
         display: inline-block;
         padding: 6px 12px;
@@ -42,7 +41,6 @@ st.markdown(f"""
         border: 1px solid {BORDER};
     }}
     .muted {{ color: {MUTED}; }}
-
     .title {{
         margin: 0; padding: 0;
         font-size: 32px; line-height: 1.2; font-weight: 800;
@@ -55,7 +53,6 @@ st.markdown(f"""
         padding: 16px; border-radius: 16px; border: 1px solid {BORDER};
         background: rgba(255,255,255,0.55);
     }}
-
     /* Tombol Data Cloud */
     .link-btn {{
         display: inline-block;
@@ -68,7 +65,7 @@ st.markdown(f"""
     }}
     .link-btn:hover {{ transform: translateY(-1px); filter: brightness(1.02); }}
 
-    /* ====== Card reusable dengan title di dalam frame ====== */
+    /* ====== Card reusable (frame) ====== */
     .panel-card {{
         border: 1px solid {BORDER};
         border-radius: 14px;
@@ -86,7 +83,7 @@ st.markdown(f"""
     }}
     .card-content {{ padding: 16px; }}
 
-    /* Map card (sinkron dengan panel-card) */
+    /* Map card sinkron dengan panel-card */
     .map-card {{ border: 1px solid {BORDER}; border-radius: 14px; overflow: hidden;
                 box-shadow: {SHADOW}; background: rgba(255,255,255,0.55); }}
     .map-title-bar {{ padding: 10px 14px; font-weight: 800; color: {MUTED};
@@ -154,10 +151,9 @@ def load_data():
 st_autorefresh(interval=7000, key="refresh_realtime")
 
 # =========================
-# HEADER: sekarang 1 frame/card utuh di atas
+# HEADER — di dalam frame TANPA title bar
 # =========================
 st.markdown('<div class="panel-card">', unsafe_allow_html=True)
-st.markdown('<div class="title-bar">🔥 Smart Fire Prediction HSEL</div>', unsafe_allow_html=True)
 st.markdown('<div class="card-content">', unsafe_allow_html=True)
 
 hdr_l, hdr_m, hdr_r = st.columns([1.1, 7.0, 2.2])
@@ -185,7 +181,7 @@ st.markdown('</div>', unsafe_allow_html=True)  # close panel-card
 st.markdown("<br>", unsafe_allow_html=True)
 
 # =========================
-# REALTIME PREDICTION (Judul di dalam frame)
+# REALTIME PREDICTION (judul di dalam frame)
 # =========================
 df = load_data()
 
@@ -307,6 +303,35 @@ else:
         ).add_to(m)
         folium_static(m, width=520, height=350)
         st.markdown('</div>', unsafe_allow_html=True)  # close map-card
+
+st.markdown('</div>', unsafe_allow_html=True)  # close card-content
+st.markdown('</div>', unsafe_allow_html=True)  # close panel-card
+
+# =========================
+# KETERANGAN APLIKASI (dikembalikan)
+# =========================
+st.markdown("<br>", unsafe_allow_html=True)
+st.markdown('<div class="panel-card">', unsafe_allow_html=True)
+st.markdown('<div class="title-bar">ℹ️ Keterangan Aplikasi</div>', unsafe_allow_html=True)
+st.markdown('<div class="card-content">', unsafe_allow_html=True)
+
+info_l, info_r = st.columns(2)
+with info_l:
+    st.markdown("### 🧠 Tentang Model")
+    st.markdown("""
+    **HSEL (Hybrid Stacking Ensemble Learning)** menggabungkan beberapa algoritma
+    pembelajaran mesin dengan *stacked generalization* serta optimasi hyperparameter.
+    Input: **Suhu, RH, Curah Hujan, Angin, Kelembaban Tanah** dari perangkat IoT.
+    Output: level risiko **Low, Moderate, High, Very High**.
+    """)
+with info_r:
+    st.markdown("### 📘 Cara Membaca Level Risiko")
+    st.markdown("""
+    - **Low**: kondisi aman, potensi kecil, pemantauan rutin.  
+    - **Moderate**: waspada, lakukan patroli berkala.  
+    - **High**: siaga, siapkan sumber daya pemadaman.  
+    - **Very High**: kondisi kritis, lakukan mitigasi segera.
+    """)
 
 st.markdown('</div>', unsafe_allow_html=True)  # close card-content
 st.markdown('</div>', unsafe_allow_html=True)  # close panel-card
