@@ -71,7 +71,7 @@ st.markdown(f"""
     .section-title {{
         font-weight: 800; font-size: 18px; margin: 4px 0 12px 0;
     }}
-    /* Button style – kontras & menyatu */
+    /* Button – kontras & menyatu */
     .link-btn {{
         display: inline-block;
         padding: 10px 16px; border-radius: 12px; text-decoration: none;
@@ -82,15 +82,24 @@ st.markdown(f"""
         font-weight: 600;
     }}
     .link-btn:hover {{ transform: translateY(-1px); filter: brightness(1.02); }}
-    /* Header kecil di atas card (untuk Peta Prediksi) */
+
+    /* Header kecil card peta — hilangkan strip putih di atas */
     .card-header {{
         font-weight: 700; color: {MUTED};
-        margin: -10px -10px 12px -10px;
+        margin: 0 0 12px 0;                 /* <- tidak ada margin negatif lagi */
         padding: 8px 12px;
         border-bottom: 1px solid {BORDER};
+        background: transparent;            /* <- transparan agar tidak muncul pita/strip */
         border-top-left-radius: 14px;
         border-top-right-radius: 14px;
-        background: rgba(255,255,255,0.35);
+    }}
+
+    /* Frame map: border + radius + shadow, clip konten di dalam */
+    .map-frame {{
+        border: 1px solid {BORDER};
+        border-radius: 14px;
+        overflow: hidden;
+        box-shadow: {SHADOW};
     }}
 </style>
 """, unsafe_allow_html=True)
@@ -246,8 +255,7 @@ with container:
             risk_label = last_row["Prediksi Kebakaran"]
             risk_text, risk_bg = risk_styles.get(risk_label, ("#111827", "#E5E7EB"))
 
-            # ------------------ Metric Cards ------------------
-            # (hapus tile Risiko -> hanya 5 metrik)
+            # ------------------ Metric Cards (5 saja) ------------------
             m1, m2, m3, m4, m5 = st.columns(5)
             m1.metric("🌡 Suhu (°C)", f"{last_num[fitur[0]]:.1f}")
             m2.metric("💧 RH (%)", f"{last_num[fitur[1]]:.1f}")
@@ -276,8 +284,9 @@ with container:
 
             with col_b:
                 st.markdown('<div class="metric-card glass">', unsafe_allow_html=True)
-                # Judul dipindah ke header frame card
+                # Judul di frame atas, tanpa strip putih di atasnya
                 st.markdown('<div class="card-header">Peta Prediksi</div>', unsafe_allow_html=True)
+                st.markdown('<div class="map-frame">', unsafe_allow_html=True)
 
                 pekanbaru_coords = [-0.5071, 101.4478]
                 color_map = {
@@ -311,7 +320,8 @@ with container:
                 ).add_to(m)
 
                 folium_static(m, width=520, height=350)
-                st.markdown('</div>', unsafe_allow_html=True)
+                st.markdown('</div>', unsafe_allow_html=True)  # close .map-frame
+                st.markdown('</div>', unsafe_allow_html=True)  # close card
 
         st.markdown('</div>', unsafe_allow_html=True)
 
@@ -338,7 +348,7 @@ with right:
         """)
 
 # =========================
-# Risk Legend (modern)
+# Risk Legend
 # =========================
 st.markdown("<br>", unsafe_allow_html=True)
 st.markdown('<div class="glass" style="padding:16px;">', unsafe_allow_html=True)
