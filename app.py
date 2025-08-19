@@ -6,7 +6,6 @@ from datetime import datetime
 from io import BytesIO
 from streamlit_folium import folium_static
 import folium
-from PIL import Image
 
 # === PAGE CONFIG ===
 st.set_page_config(page_title="Smart Fire Prediction HSEL", page_icon="favicon.ico", layout="wide")
@@ -80,10 +79,12 @@ def load_data():
     return pd.read_csv(url)
 
 # === HEADER ===
-col1, col2 = st.columns([1, 9])
-with col1:
+col_left, col_mid, col_right = st.columns([1, 8, 2], vertical_alignment="center")
+
+with col_left:
     st.image("logo.png", width=170)
-with col2:
+
+with col_mid:
     st.markdown("""
         <div style='margin-left: 20px;'>
             <h2 style='margin-bottom: 0px;'>Smart Fire Prediction HSEL Model</h2>
@@ -105,6 +106,13 @@ with col2:
             """,
             unsafe_allow_html=True
         )
+
+with col_right:
+    r1, r2 = st.columns(2, vertical_alignment="center")
+    with r1:
+        st.image("logo.png", use_column_width=True)
+    with r2:
+        st.image("upi.png", use_column_width=True)
 
 st.markdown("<hr style='margin-top: 10px; margin-bottom: 25px;'>", unsafe_allow_html=True)
 
@@ -175,8 +183,8 @@ with realtime:
             "Value": [f"{float(last_num[col]):.1f}" for col in fitur]
         })
 
-        # 3 kolom tampilan
-        col_kiri, col_tengah, col_kanan = st.columns([1.2, 1.2, 1.2])
+        # 2 kolom tampilan (gambar IoT dihapus)
+        col_kiri, col_tengah = st.columns([1.2, 1.2])
 
         with col_kiri:
             st.markdown("<h5 style='text-align: center;'>Data Sensor Realtime</h5>", unsafe_allow_html=True)
@@ -236,11 +244,6 @@ with realtime:
 
             folium_static(m, width=450, height=350)
 
-        with col_kanan:
-            st.markdown("<h5 style='text-align: center;'>IoT Smart Fire Prediction</h5>", unsafe_allow_html=True)
-            image = Image.open("forestiot4.jpg")
-            st.image(image.resize((480, 360)))
-
 # === TABEL TINGKAT RISIKO ===
 st.markdown("<div class='section-title'>Tabel Tingkat Resiko dan Intensitas Kebakaran</div>", unsafe_allow_html=True)
 st.markdown("""
@@ -290,90 +293,6 @@ if 'df' in locals() and not df.empty:
         data=df_xlsx,
         file_name="hasil_prediksi_kebakaran.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
-
-# === PREDIKSI MANUAL ===
-st.markdown("<div class='section-title'>Pengujian Menggunakan Data Meteorologi Manual</div>", unsafe_allow_html=True)
-
-if "manual_input" not in st.session_state:
-    st.session_state.manual_input = {"suhu": 30.0, "kelembapan": 65.0, "curah": 10.0, "angin": 3.0, "tanah": 50.0}
-if "manual_result" not in st.session_state:
-    st.session_state.manual_result = None
-
-col1, col2, col3 = st.columns(3)
-with col1:
-    suhu = st.number_input("Suhu Udara (°C)", value=st.session_state.manual_input["suhu"])
-    kelembapan = st.number_input("Kelembapan Udara (%)", value=st.session_state.manual_input["kelembapan"])
-with col2:
-    curah = st.number_input("Curah Hujan (mm)", value=st.session_state.manual_input["curah"])
-    angin = st.number_input("Kecepatan Angin (m/s)", value=st.session_state.manual_input["angin"])
-with col3:
-    tanah = st.number_input("Kelembaban Tanah (%)", value=st.session_state.manual_input["tanah"])
-
-btn_pred, btn_reset, _ = st.columns([1, 1, 8])
-with btn_pred:
-    if st.button("🔍 Prediksi Manual"):
-        input_df = pd.DataFrame([{
-            'Tavg: Temperatur rata-rata (°C)': suhu,
-            'RH_avg: Kelembapan rata-rata (%)': kelembapan,
-            'RR: Curah hujan (mm)': curah,
-            'ff_avg: Kecepatan angin rata-rata (m/s)': angin,
-            'Kelembaban Permukaan Tanah': tanah
-        }])
-        scaled_manual = scaler.transform(input_df)
-        st.session_state.manual_result = convert_to_label(model.predict(scaled_manual)[0])
-        st.session_state.manual_input.update({"suhu": suhu, "kelembapan": kelembapan, "curah": curah, "angin": angin, "tanah": tanah})
-
-with btn_reset:
-    if st.button("🧼 Reset Manual"):
-        st.session_state.manual_input = {"suhu": 0.0, "kelembapan": 0.0, "curah": 0.0, "angin": 0.0, "tanah": 0.0}
-        st.session_state.manual_result = None
-        st.experimental_rerun()
-
-if st.session_state.manual_result:
-    hasil = st.session_state.manual_result
-    font, bg = risk_styles.get(hasil, ("black", "white"))
-    st.markdown(
-        f"<p style='color:{font}; background-color:{bg}; padding:10px; border-radius:5px;'>"
-        f"Prediksi Risiko Kebakaran: <b>{hasil}</b></p>", unsafe_allow_html=True
-    )
-
-# === PREDIKSI TEKS ===
-st.markdown("<div class='section-title'>Pengujian Menggunakan Data Teks</div>", unsafe_allow_html=True)
-
-if "text_input" not in st.session_state:
-    st.session_state.text_input = ""
-if "text_result" not in st.session_state:
-    st.session_state.text_result = None
-
-input_text = st.text_area("Masukkan deskripsi lingkungan:", value=st.session_state.text_input, height=120)
-
-btn_pred_text, btn_reset_text, _ = st.columns([1, 1, 8])
-with btn_pred_text:
-    if st.button("🔍 Prediksi Teks"):
-        try:
-            vectorizer = joblib.load("tfidf_vectorizer.joblib")
-            model_text = joblib.load("stacking_text_model.joblib")
-            X_trans = vectorizer.transform([input_text])
-            pred = model_text.predict(X_trans)[0]
-            label_text = convert_to_label(pred)
-            st.session_state.text_input = input_text
-            st.session_state.text_result = label_text
-        except Exception as e:
-            st.error(f"Terjadi kesalahan saat memuat model atau memproses input: {e}")
-
-with btn_reset_text:
-    if st.button("🧼 Reset Teks"):
-        st.session_state.text_input = ""
-        st.session_state.text_result = None
-        st.experimental_rerun()
-
-if st.session_state.text_result:
-    hasil = st.session_state.text_result
-    font, bg = risk_styles.get(hasil, ("black", "white"))
-    st.markdown(
-        f"<p style='color:{font}; background-color:{bg}; padding:10px; border-radius:5px;'>"
-        f"Hasil Prediksi Tingkat Risiko Kebakaran: <b>{hasil}</b></p>", unsafe_allow_html=True
     )
 
 # === FOOTER ===
