@@ -163,7 +163,7 @@ with hdr_m:
     st.markdown("""
         <h1 class="title">UHTP Smart Fire Prediction</h1>
         <p class="sub muted">
-            Prediksi <b>risiko kebakaran hutan</b> real-time berbasis
+            Sistem Prediksi <b>tingkat risiko kebakaran hutan</b> real-time berbasis
             <b>Hybrid Machine Learnin</b> dari data sensor IoT.
         </p>
         <a class="link-btn" href="https://docs.google.com/spreadsheets/d/1epkIp2U1okjCfXOoz_bkgey4kYa30EtmWlLB6c_911Y/edit?gid=0#gid=0" target="_blank">☁️&nbsp; Data Cloud</a>
@@ -360,6 +360,7 @@ st.markdown(f"""
   </div>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
