@@ -382,3 +382,4 @@ st.markdown(f"""
   <span class="muted">© {year} Smart Fire Prediction HSEL · Crafted with ❤ · Theme: Indigo & Emerald</span>
 </div>
 """, unsafe_allow_html=True)
+
