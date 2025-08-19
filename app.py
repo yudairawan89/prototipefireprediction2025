@@ -171,7 +171,7 @@ with hdr_m:
 with hdr_r:
     r1, r2 = st.columns(2, gap="small")
     with r1:
-        st.image("logo.png", use_container_width=True)
+        st.image("logo smft.png", use_container_width=True)
     with r2:
         st.image("upi.png", use_container_width=True)
 
@@ -360,6 +360,7 @@ st.markdown(f"""
   </div>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
