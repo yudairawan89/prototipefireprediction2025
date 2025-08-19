@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import joblib
 from streamlit_autorefresh import st_autorefresh
-from datetime import datetime
 from io import BytesIO
 from streamlit_folium import folium_static
 import folium
@@ -74,12 +73,12 @@ scaler = load_scaler()
 
 # === LOAD DATA TANPA CACHE ===
 def load_data():
-    # Google Sheets baru (format CSV)
+    # Google Sheets (format CSV)
     url = "https://docs.google.com/spreadsheets/d/1epkIp2U1okjCfXOoz_bkgey4kYa30EtmWlLB6c_911Y/export?format=csv"
     return pd.read_csv(url)
 
 # === HEADER ===
-col_left, col_mid, col_right = st.columns([1, 8, 2], vertical_alignment="center")
+col_left, col_mid, col_right = st.columns([1, 8, 2])
 
 with col_left:
     st.image("logo.png", width=170)
@@ -108,11 +107,12 @@ with col_mid:
         )
 
 with col_right:
-    r1, r2 = st.columns(2, vertical_alignment="center")
+    r1, r2 = st.columns(2)
     with r1:
-        st.image("logo.png", use_column_width=True)
+        # perbaikan: gunakan use_container_width (bukan use_column_width)
+        st.image("logo.png", use_container_width=True)
     with r2:
-        st.image("upi.png", use_column_width=True)
+        st.image("upi.png", use_container_width=True)
 
 st.markdown("<hr style='margin-top: 10px; margin-bottom: 25px;'>", unsafe_allow_html=True)
 
@@ -127,7 +127,7 @@ with realtime:
     if df is None or df.empty:
         st.warning("Data belum tersedia atau kosong di Google Sheets.")
     else:
-        # Samakan nama kolom dari sheet -> nama kanonik yang dipakai model
+        # Penyesuaian nama kolom
         df = df.rename(columns={
             'Timestamp': 'Waktu',
             'Suhu': 'Tavg: Temperatur rata-rata (°C)',
@@ -145,14 +145,14 @@ with realtime:
             'Kelembaban Permukaan Tanah'
         ]
 
-        # Pastikan semua kolom fitur ada
+        # Validasi kolom
         missing = [c for c in fitur + ['Waktu'] if c not in df.columns]
         if missing:
             st.error("Kolom wajib tidak ditemukan di Sheets: " + ", ".join(missing))
             st.dataframe(df.head(), use_container_width=True)
             st.stop()
 
-        # Siapkan fitur numerik (ganti koma -> titik, cast ke float)
+        # Pembersihan nilai numerik
         clean_df = df[fitur].copy()
         for col in fitur:
             clean_df[col] = (
@@ -168,9 +168,9 @@ with realtime:
         predictions = [convert_to_label(p) for p in model.predict(scaled_all)]
         df["Prediksi Kebakaran"] = predictions
 
-        # Baris terakhir untuk ringkasan
+        # Ringkasan baris terakhir
         last_row = df.iloc[-1]
-        last_num = clean_df.iloc[-1]  # versi numerik untuk formatting
+        last_num = clean_df.iloc[-1]
         waktu = pd.to_datetime(last_row['Waktu'])
         hari = convert_day_to_indonesian(waktu.strftime('%A'))
         bulan = convert_month_to_indonesian(waktu.strftime('%B'))
@@ -183,7 +183,7 @@ with realtime:
             "Value": [f"{float(last_num[col]):.1f}" for col in fitur]
         })
 
-        # 2 kolom tampilan (gambar IoT dihapus)
+        # Dua kolom (peta + ringkasan)
         col_kiri, col_tengah = st.columns([1.2, 1.2])
 
         with col_kiri:
@@ -273,27 +273,6 @@ st.markdown("""
 </table>
 </div>
 """, unsafe_allow_html=True)
-
-# === TAMPILKAN DATA LENGKAP ===
-st.markdown("<div class='section-title'>Data Sensor Lengkap</div>", unsafe_allow_html=True)
-st.dataframe(df if 'df' in locals() else pd.DataFrame(), use_container_width=True)
-
-# Tombol untuk download sebagai file Excel
-def to_excel(df_to_save: pd.DataFrame) -> bytes:
-    output = BytesIO()
-    writer = pd.ExcelWriter(output, engine='xlsxwriter')
-    df_to_save.to_excel(writer, index=False, sheet_name='Prediksi')
-    writer.close()
-    return output.getvalue()
-
-if 'df' in locals() and not df.empty:
-    df_xlsx = to_excel(df)
-    st.download_button(
-        label="📥 Download Hasil Prediksi Kebakaran sebagai XLSX",
-        data=df_xlsx,
-        file_name="hasil_prediksi_kebakaran.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
 
 # === FOOTER ===
 st.markdown("<br><hr>", unsafe_allow_html=True)
