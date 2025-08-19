@@ -68,9 +68,7 @@ st.markdown(f"""
     .metric-card {{
         padding: 16px; border-radius: 16px; border: 1px solid {BORDER};
     }}
-    .section-title {{
-        font-weight: 800; font-size: 18px; margin: 4px 0 12px 0;
-    }}
+    /* Tombol Data Cloud */
     .link-btn {{
         display: inline-block;
         padding: 10px 16px; border-radius: 12px; text-decoration: none;
@@ -82,21 +80,31 @@ st.markdown(f"""
     }}
     .link-btn:hover {{ transform: translateY(-1px); filter: brightness(1.02); }}
 
-    /* === MAP CARD (judul di dalam frame) === */
-    .map-card {{
+    /* ====== Card reusable dengan title di dalam frame ====== */
+    .panel-card {{
         border: 1px solid {BORDER};
         border-radius: 14px;
-        overflow: hidden;                  /* clip konten (map + header) */
+        overflow: hidden;
         box-shadow: {SHADOW};
         background: rgba(255,255,255,0.55);
     }}
-    .map-title-bar {{
+    .title-bar {{
         padding: 10px 14px;
-        font-weight: 700;
+        font-weight: 800;
         color: {MUTED};
         border-bottom: 1px solid {BORDER};
-        background: rgba(255,255,255,0.55); /* senada dengan frame */
+        background: rgba(255,255,255,0.55);
+        display: flex;
+        align-items: center;
+        gap: 8px;
     }}
+    .card-content {{ padding: 16px; }}
+
+    /* Map card (sinkron dengan panel-card) */
+    .map-card {{ border: 1px solid {BORDER}; border-radius: 14px; overflow: hidden;
+                box-shadow: {SHADOW}; background: rgba(255,255,255,0.55); }}
+    .map-title-bar {{ padding: 10px 14px; font-weight: 800; color: {MUTED};
+                     border-bottom: 1px solid {BORDER}; background: rgba(255,255,255,0.55); }}
 </style>
 """, unsafe_allow_html=True)
 
@@ -189,164 +197,141 @@ with hero_r:
 st.markdown("<br>", unsafe_allow_html=True)
 
 # =========================
-# REALTIME PREDICTION
+# REALTIME PREDICTION (Judul di dalam frame)
 # =========================
 df = load_data()
-container = st.container()
-with container:
-    box = st.container()
-    with box:
-        st.markdown('<div class="glass" style="padding:18px;">', unsafe_allow_html=True)
-        st.markdown('<div class="section-title">Hasil Prediksi Terkini</div>', unsafe_allow_html=True)
 
-        if df is None or df.empty:
-            st.warning("Data belum tersedia atau kosong di Google Sheets.")
-            st.markdown('</div>', unsafe_allow_html=True)
-        else:
-            # Rename kolom
-            df = df.rename(columns={
-                'Timestamp': 'Waktu',
-                'Suhu': 'Tavg: Temperatur rata-rata (°C)',
-                'Kelembapan Udara': 'RH_avg: Kelembapan rata-rata (%)',
-                'Curah Hujan': 'RR: Curah hujan (mm)',
-                'Kecepatan Angin': 'ff_avg: Kecepatan angin rata-rata (m/s)',
-                'Kelembapan Tanah': 'Kelembaban Permukaan Tanah',
-            })
+# Panel-card untuk seluruh bagian hasil prediksi (judul di dalam frame)
+st.markdown('<div class="panel-card">', unsafe_allow_html=True)
+st.markdown('<div class="title-bar">📈 Hasil Prediksi Terkini</div>', unsafe_allow_html=True)
+st.markdown('<div class="card-content">', unsafe_allow_html=True)
 
-            fitur = [
-                'Tavg: Temperatur rata-rata (°C)',
-                'RH_avg: Kelembapan rata-rata (%)',
-                'RR: Curah hujan (mm)',
-                'ff_avg: Kecepatan angin rata-rata (m/s)',
-                'Kelembaban Permukaan Tanah'
-            ]
+if df is None or df.empty:
+    st.warning("Data belum tersedia atau kosong di Google Sheets.")
+else:
+    # Rename kolom
+    df = df.rename(columns={
+        'Timestamp': 'Waktu',
+        'Suhu': 'Tavg: Temperatur rata-rata (°C)',
+        'Kelembapan Udara': 'RH_avg: Kelembapan rata-rata (%)',
+        'Curah Hujan': 'RR: Curah hujan (mm)',
+        'Kecepatan Angin': 'ff_avg: Kecepatan angin rata-rata (m/s)',
+        'Kelembapan Tanah': 'Kelembaban Permukaan Tanah',
+    })
 
-            missing = [c for c in fitur + ['Waktu'] if c not in df.columns]
-            if missing:
-                st.error("Kolom wajib tidak ditemukan di Sheets: " + ", ".join(missing))
-                st.dataframe(df.head(), use_container_width=True)
-                st.markdown('</div>', unsafe_allow_html=True)
-                st.stop()
+    fitur = [
+        'Tavg: Temperatur rata-rata (°C)',
+        'RH_avg: Kelembapan rata-rata (%)',
+        'RR: Curah hujan (mm)',
+        'ff_avg: Kecepatan angin rata-rata (m/s)',
+        'Kelembaban Permukaan Tanah'
+    ]
 
-            clean_df = df[fitur].copy()
-            for col in fitur:
-                clean_df[col] = (
-                    clean_df[col].astype(str)
-                    .str.replace(',', '.', regex=False)
-                    .astype(float)
-                    .fillna(0)
-                )
-            clean_df = clean_df.apply(pd.to_numeric, errors='coerce').fillna(0)
+    missing = [c for c in fitur + ['Waktu'] if c not in df.columns]
+    if missing:
+        st.error("Kolom wajib tidak ditemukan di Sheets: " + ", ".join(missing))
+        st.dataframe(df.head(), use_container_width=True)
+        st.markdown('</div>', unsafe_allow_html=True)   # close card-content
+        st.markdown('</div>', unsafe_allow_html=True)   # close panel-card
+        st.stop()
 
-            scaled_all = scaler.transform(clean_df)
-            predictions = [convert_to_label(p) for p in model.predict(scaled_all)]
-            df["Prediksi Kebakaran"] = predictions
+    clean_df = df[fitur].copy()
+    for col in fitur:
+        clean_df[col] = (
+            clean_df[col].astype(str)
+            .str.replace(',', '.', regex=False)
+            .astype(float)
+            .fillna(0)
+        )
+    clean_df = clean_df.apply(pd.to_numeric, errors='coerce').fillna(0)
 
-            last_row = df.iloc[-1]
-            last_num = clean_df.iloc[-1]
-            waktu = pd.to_datetime(last_row["Waktu"])
-            hari = convert_day_to_indonesian(waktu.strftime("%A"))
-            bulan = convert_month_to_indonesian(waktu.strftime("%B"))
-            tanggal = waktu.strftime(f"%d {bulan} %Y")
-            risk_label = last_row["Prediksi Kebakaran"]
-            risk_text, risk_bg = risk_styles.get(risk_label, ("#111827", "#E5E7EB"))
+    scaled_all = scaler.transform(clean_df)
+    predictions = [convert_to_label(p) for p in model.predict(scaled_all)]
+    df["Prediksi Kebakaran"] = predictions
 
-            # ------------------ Metric Cards (5 saja) ------------------
-            m1, m2, m3, m4, m5 = st.columns(5)
-            m1.metric("🌡 Suhu (°C)", f"{last_num[fitur[0]]:.1f}")
-            m2.metric("💧 RH (%)", f"{last_num[fitur[1]]:.1f}")
-            m3.metric("🌧 Curah (mm)", f"{last_num[fitur[2]]:.1f}")
-            m4.metric("💨 Angin (m/s)", f"{last_num[fitur[3]]:.1f}")
-            m5.metric("🪴 Tanah (%)", f"{last_num[fitur[4]]:.1f}")
+    last_row = df.iloc[-1]
+    last_num = clean_df.iloc[-1]
+    waktu = pd.to_datetime(last_row["Waktu"])
+    hari = convert_day_to_indonesian(waktu.strftime("%A"))
+    bulan = convert_month_to_indonesian(waktu.strftime("%B"))
+    tanggal = waktu.strftime(f"%d {bulan} %Y")
+    risk_label = last_row["Prediksi Kebakaran"]
+    risk_text, risk_bg = risk_styles.get(risk_label, ("#111827", "#E5E7EB"))
 
-            st.markdown("<br>", unsafe_allow_html=True)
+    # --------- Metrics (5 saja) ----------
+    m1, m2, m3, m4, m5 = st.columns(5)
+    m1.metric("🌡 Suhu (°C)", f"{last_num[fitur[0]]:.1f}")
+    m2.metric("💧 RH (%)", f"{last_num[fitur[1]]:.1f}")
+    m3.metric("🌧 Curah (mm)", f"{last_num[fitur[2]]:.1f}")
+    m4.metric("💨 Angin (m/s)", f"{last_num[fitur[3]]:.1f}")
+    m5.metric("🪴 Tanah (%)", f"{last_num[fitur[4]]:.1f}")
 
-            # ------------------ Ringkasan + Map ------------------
-            col_a, col_b = st.columns([1.2, 1.2])
+    st.markdown("<br>", unsafe_allow_html=True)
 
-            with col_a:
-                st.markdown(f"""
-                    <div class="metric-card glass">
-                        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-                            <span class="chip" style="background:{risk_bg}; color:{risk_text}">🔥 {risk_label}</span>
-                            <span class="muted">Terakhir diperbarui: <b>{hari}, {tanggal}</b></span>
-                        </div>
-                        <div class="muted" style="margin-top:8px;">
-                            Lokasi: <b>Pekanbaru</b> · Koordinat:
-                            <span style="color:#16A34A;">-0.5071, 101.4478</span>
-                        </div>
-                    </div>
-                """, unsafe_allow_html=True)
+    # --------- Ringkasan + Map ----------
+    col_a, col_b = st.columns([1.2, 1.2])
 
-            with col_b:
-                # ===== Map card: judul di dalam frame =====
-                st.markdown('<div class="map-card">', unsafe_allow_html=True)
-                st.markdown('<div class="map-title-bar">🗺️ Peta Prediksi</div>', unsafe_allow_html=True)
+    with col_a:
+        st.markdown(f"""
+            <div class="metric-card glass">
+                <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                    <span class="chip" style="background:{risk_bg}; color:{risk_text}">🔥 {risk_label}</span>
+                    <span class="muted">Terakhir diperbarui: <b>{hari}, {tanggal}</b></span>
+                </div>
+                <div class="muted" style="margin-top:8px;">
+                    Lokasi: <b>Pekanbaru</b> · Koordinat:
+                    <span style="color:#16A34A;">-0.5071, 101.4478</span>
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
 
-                pekanbaru_coords = [-0.5071, 101.4478]
-                color_map = {
-                    "Low / Rendah": "blue",
-                    "Moderate / Sedang": "green",
-                    "High / Tinggi": "orange",
-                    "Very High / Sangat Tinggi": "red"
-                }
-                marker_color = color_map.get(risk_label, "gray")
+    with col_b:
+        st.markdown('<div class="map-card">', unsafe_allow_html=True)
+        st.markdown('<div class="map-title-bar">🗺️ Peta Prediksi</div>', unsafe_allow_html=True)
 
-                popup_text = folium.Popup(f"""
-                    <div style='width: 230px; font-size: 13px; line-height: 1.5;'>
-                    <b>Prediksi:</b> {risk_label}<br>
-                    <b>Suhu:</b> {last_num[fitur[0]]:.1f} °C<br>
-                    <b>Kelembapan:</b> {last_num[fitur[1]]:.1f} %<br>
-                    <b>Curah Hujan:</b> {last_num[fitur[2]]:.1f} mm<br>
-                    <b>Kecepatan Angin:</b> {last_num[fitur[3]]:.1f} m/s<br>
-                    <b>Kelembaban Tanah:</b> {last_num[fitur[4]]:.1f} %<br>
-                    <b>Waktu:</b> {last_row['Waktu']}
-                    </div>
-                """, max_width=250)
+        pekanbaru_coords = [-0.5071, 101.4478]
+        color_map = {
+            "Low / Rendah": "blue",
+            "Moderate / Sedang": "green",
+            "High / Tinggi": "orange",
+            "Very High / Sangat Tinggi": "red"
+        }
+        marker_color = color_map.get(risk_label, "gray")
 
-                m = folium.Map(location=pekanbaru_coords, zoom_start=11, tiles="CartoDB positron")
-                folium.Circle(
-                    location=pekanbaru_coords, radius=3000,
-                    color=marker_color, fill=True, fill_color=marker_color, fill_opacity=0.3
-                ).add_to(m)
-                folium.Marker(
-                    location=pekanbaru_coords, popup=popup_text,
-                    icon=folium.Icon(color=marker_color, icon="info-sign")
-                ).add_to(m)
+        popup_text = folium.Popup(f"""
+            <div style='width: 230px; font-size: 13px; line-height: 1.5;'>
+            <b>Prediksi:</b> {risk_label}<br>
+            <b>Suhu:</b> {last_num[fitur[0]]:.1f} °C<br>
+            <b>Kelembapan:</b> {last_num[fitur[1]]:.1f} %<br>
+            <b>Curah Hujan:</b> {last_num[fitur[2]]:.1f} mm<br>
+            <b>Kecepatan Angin:</b> {last_num[fitur[3]]:.1f} m/s<br>
+            <b>Kelembaban Tanah:</b> {last_num[fitur[4]]:.1f} %<br>
+            <b>Waktu:</b> {last_row['Waktu']}
+            </div>
+        """, max_width=250)
 
-                folium_static(m, width=520, height=350)
-                st.markdown('</div>', unsafe_allow_html=True)  # close .map-card
+        m = folium.Map(location=pekanbaru_coords, zoom_start=11, tiles="CartoDB positron")
+        folium.Circle(
+            location=pekanbaru_coords, radius=3000,
+            color=marker_color, fill=True, fill_color=marker_color, fill_opacity=0.3
+        ).add_to(m)
+        folium.Marker(
+            location=pekanbaru_coords, popup=popup_text,
+            icon=folium.Icon(color=marker_color, icon="info-sign")
+        ).add_to(m)
+        folium_static(m, width=520, height=350)
+        st.markdown('</div>', unsafe_allow_html=True)  # close map-card
 
-        st.markdown('</div>', unsafe_allow_html=True)
+st.markdown('</div>', unsafe_allow_html=True)  # close card-content
+st.markdown('</div>', unsafe_allow_html=True)  # close panel-card
 
 # =========================
-# INFO SECTIONS (Accordion)
-# =========================
-left, right = st.columns(2)
-with left:
-    with st.expander("ℹ️ Tentang Model", expanded=False):
-        st.markdown("""
-        **HSEL (Hybrid Stacking Ensemble Learning)** menggabungkan beberapa algoritma
-        pembelajaran mesin dengan *stacked generalization* dan optimasi hyperparameter.
-        Sistem menerima input: **Suhu, RH, Curah Hujan, Angin, Kelembaban Tanah** dari IoT.
-        Output berupa level risiko: *Low, Moderate, High, Very High*.
-        """)
-
-with right:
-    with st.expander("📊 Cara Membaca Level Risiko", expanded=False):
-        st.markdown("""
-        - **Low**: kondisi aman, potensi kecil, pemantauan rutin.
-        - **Moderate**: waspada, lakukan patroli berkala.
-        - **High**: siaga, siapkan sumber daya pemadaman.
-        - **Very High**: kondisi kritis, lakukan mitigasi segera.
-        """)
-
-# =========================
-# Risk Legend
+# Risk Legend (judul di dalam frame)
 # =========================
 st.markdown("<br>", unsafe_allow_html=True)
-st.markdown('<div class="glass" style="padding:16px;">', unsafe_allow_html=True)
-st.markdown('<div class="section-title">Legenda Tingkat Risiko</div>', unsafe_allow_html=True)
+st.markdown('<div class="panel-card">', unsafe_allow_html=True)
+st.markdown('<div class="title-bar">🏷️ Legenda Tingkat Risiko</div>', unsafe_allow_html=True)
+st.markdown('<div class="card-content">', unsafe_allow_html=True)
 
 legend_cols = st.columns(4)
 legend_data = [
@@ -366,7 +351,9 @@ for (lab, bgc, tc, desc), col in zip(legend_data, legend_cols):
             """,
             unsafe_allow_html=True
         )
-st.markdown('</div>', unsafe_allow_html=True)
+
+st.markdown('</div>', unsafe_allow_html=True)  # close card-content
+st.markdown('</div>', unsafe_allow_html=True)  # close panel-card
 
 # =========================
 # Footer
