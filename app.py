@@ -161,7 +161,7 @@ with hdr_l:
     st.image("logo.png", width=86)
 with hdr_m:
     st.markdown("""
-        <h1 class="title">Smart Fire Prediction HSEL</h1>
+        <h1 class="title">Smart Fire Prediction</h1>
         <p class="sub muted">
             Prediksi <b>risiko kebakaran hutan</b> real-time berbasis
             <b>Hybrid Machine Learnin</b> dari data sensor IoT.
@@ -272,8 +272,8 @@ else:
         with st.expander("ℹ️ Keterangan Aplikasi", expanded=False):
             st.markdown("#### 🧠 Tentang Model")
             st.markdown("""
-            **HSEL (Hybrid Stacking Ensemble Learning)** menggabungkan beberapa algoritma
-            pembelajaran mesin dengan *stacked generalization* serta optimasi hyperparameter.
+            **Hybrid Machine Learning)** menggabungkan beberapa algoritma
+            pembelajaran mesin dengan optimasi hyperparameter.
             Input dari IoT: **Suhu, RH, Curah Hujan, Angin, Kelembaban Tanah**.
             Output: level risiko **Low, Moderate, High, Very High**.
             """)
@@ -360,4 +360,5 @@ st.markdown(f"""
   </div>
 </div>
 """, unsafe_allow_html=True)
+
 
