@@ -158,7 +158,7 @@ st.markdown('<div class="card-content">', unsafe_allow_html=True)
 
 hdr_l, hdr_m, hdr_r = st.columns([1.1, 7.0, 2.2])
 with hdr_l:
-    st.image("logo.png", width=86)
+    st.image("uhts.png", width=86)
 with hdr_m:
     st.markdown("""
         <h1 class="title">UHTP Smart Fire Prediction</h1>
@@ -357,3 +357,4 @@ st.markdown(f"""
   </div>
 </div>
 """, unsafe_allow_html=True)
+
