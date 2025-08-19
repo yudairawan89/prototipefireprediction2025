@@ -272,7 +272,7 @@ else:
         with st.expander("ℹ️ Keterangan Aplikasi", expanded=False):
             st.markdown("#### 🧠 Tentang Model")
             st.markdown("""
-            **Hybrid Machine Learning)** menggabungkan beberapa algoritma
+            **Hybrid Machine Learning** menggabungkan beberapa algoritma
             pembelajaran mesin dengan optimasi hyperparameter.
             Input dari IoT: **Suhu, RH, Curah Hujan, Angin, Kelembaban Tanah**.
             Output: level risiko **Low, Moderate, High, Very High**.
@@ -360,5 +360,6 @@ st.markdown(f"""
   </div>
 </div>
 """, unsafe_allow_html=True)
+
 
 
