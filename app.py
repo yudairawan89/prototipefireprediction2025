@@ -26,7 +26,6 @@ ACCENT = "#4F46E5"   # indigo
 ACCENT2 = "#059669"  # emerald
 BORDER = "rgba(15,23,42,0.08)"
 SHADOW = "0 10px 24px rgba(2,6,23,0.08)"
-GRAD = "linear-gradient(135deg, #EEF2FF 0%, #E6FFFB 100%)"
 
 st.markdown(f"""
 <style>
@@ -34,21 +33,7 @@ st.markdown(f"""
         background: {BG};
         color: {TEXT};
     }}
-    .glass {{
-        background: {PANEL};
-        backdrop-filter: blur(14px);
-        -webkit-backdrop-filter: blur(14px);
-        border: 1px solid {BORDER};
-        border-radius: 18px;
-        box-shadow: {SHADOW};
-    }}
-    .hero {{
-        background: {GRAD};
-        border-radius: 18px;
-        padding: 22px 26px;
-        position: relative;
-        overflow: hidden;
-    }}
+
     .chip {{
         display: inline-block;
         padding: 6px 12px;
@@ -57,6 +42,7 @@ st.markdown(f"""
         border: 1px solid {BORDER};
     }}
     .muted {{ color: {MUTED}; }}
+
     .title {{
         margin: 0; padding: 0;
         font-size: 32px; line-height: 1.2; font-weight: 800;
@@ -67,7 +53,9 @@ st.markdown(f"""
     }}
     .metric-card {{
         padding: 16px; border-radius: 16px; border: 1px solid {BORDER};
+        background: rgba(255,255,255,0.55);
     }}
+
     /* Tombol Data Cloud */
     .link-btn {{
         display: inline-block;
@@ -86,7 +74,7 @@ st.markdown(f"""
         border-radius: 14px;
         overflow: hidden;
         box-shadow: {SHADOW};
-        background: rgba(255,255,255,0.55);
+        background: rgba(255,255,255,0.82);
     }}
     .title-bar {{
         padding: 10px 14px;
@@ -94,9 +82,7 @@ st.markdown(f"""
         color: {MUTED};
         border-bottom: 1px solid {BORDER};
         background: rgba(255,255,255,0.55);
-        display: flex;
-        align-items: center;
-        gap: 8px;
+        display: flex; align-items: center; gap: 8px;
     }}
     .card-content {{ padding: 16px; }}
 
@@ -163,19 +149,22 @@ def load_data():
     return pd.read_csv(url)
 
 # =========================
-# HERO HEADER
+# AUTOREFRESH
 # =========================
 st_autorefresh(interval=7000, key="refresh_realtime")
 
-hero_l, hero_m, hero_r = st.columns([1.1, 7.0, 2.2])
-with hero_l:
-    st.markdown('<div class="hero glass">', unsafe_allow_html=True)
-    st.image("logo.png", width=86)
-    st.markdown('</div>', unsafe_allow_html=True)
+# =========================
+# HEADER: sekarang 1 frame/card utuh di atas
+# =========================
+st.markdown('<div class="panel-card">', unsafe_allow_html=True)
+st.markdown('<div class="title-bar">🔥 Smart Fire Prediction HSEL</div>', unsafe_allow_html=True)
+st.markdown('<div class="card-content">', unsafe_allow_html=True)
 
-with hero_m:
-    st.markdown('<div class="hero glass">', unsafe_allow_html=True)
-    st.markdown(f"""
+hdr_l, hdr_m, hdr_r = st.columns([1.1, 7.0, 2.2])
+with hdr_l:
+    st.image("logo.png", width=86)
+with hdr_m:
+    st.markdown("""
         <h1 class="title">Smart Fire Prediction HSEL</h1>
         <p class="sub muted">
             Prediksi <b>risiko kebakaran hutan</b> real-time berbasis
@@ -183,16 +172,15 @@ with hero_m:
         </p>
         <a class="link-btn" href="https://docs.google.com/spreadsheets/d/1epkIp2U1okjCfXOoz_bkgey4kYa30EtmWlLB6c_911Y/edit?gid=0#gid=0" target="_blank">☁️&nbsp; Data Cloud</a>
     """, unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
-
-with hero_r:
-    st.markdown('<div class="hero glass">', unsafe_allow_html=True)
-    c1, c2 = st.columns(2, gap="small")
-    with c1:
+with hdr_r:
+    r1, r2 = st.columns(2, gap="small")
+    with r1:
         st.image("logo.png", use_container_width=True)
-    with c2:
+    with r2:
         st.image("upi.png", use_container_width=True)
-    st.markdown('</div>', unsafe_allow_html=True)
+
+st.markdown('</div>', unsafe_allow_html=True)  # close card-content
+st.markdown('</div>', unsafe_allow_html=True)  # close panel-card
 
 st.markdown("<br>", unsafe_allow_html=True)
 
@@ -201,7 +189,6 @@ st.markdown("<br>", unsafe_allow_html=True)
 # =========================
 df = load_data()
 
-# Panel-card untuk seluruh bagian hasil prediksi (judul di dalam frame)
 st.markdown('<div class="panel-card">', unsafe_allow_html=True)
 st.markdown('<div class="title-bar">📈 Hasil Prediksi Terkini</div>', unsafe_allow_html=True)
 st.markdown('<div class="card-content">', unsafe_allow_html=True)
@@ -209,7 +196,6 @@ st.markdown('<div class="card-content">', unsafe_allow_html=True)
 if df is None or df.empty:
     st.warning("Data belum tersedia atau kosong di Google Sheets.")
 else:
-    # Rename kolom
     df = df.rename(columns={
         'Timestamp': 'Waktu',
         'Suhu': 'Tavg: Temperatur rata-rata (°C)',
@@ -231,8 +217,8 @@ else:
     if missing:
         st.error("Kolom wajib tidak ditemukan di Sheets: " + ", ".join(missing))
         st.dataframe(df.head(), use_container_width=True)
-        st.markdown('</div>', unsafe_allow_html=True)   # close card-content
-        st.markdown('</div>', unsafe_allow_html=True)   # close panel-card
+        st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
         st.stop()
 
     clean_df = df[fitur].copy()
@@ -273,7 +259,7 @@ else:
 
     with col_a:
         st.markdown(f"""
-            <div class="metric-card glass">
+            <div class="metric-card">
                 <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
                     <span class="chip" style="background:{risk_bg}; color:{risk_text}">🔥 {risk_label}</span>
                     <span class="muted">Terakhir diperbarui: <b>{hari}, {tanggal}</b></span>
@@ -361,7 +347,9 @@ st.markdown('</div>', unsafe_allow_html=True)  # close panel-card
 year = datetime.now().year
 st.markdown("<br>", unsafe_allow_html=True)
 st.markdown(f"""
-<div class="glass" style="padding:14px; text-align:center;">
-  <span class="muted">© {year} Smart Fire Prediction HSEL · Crafted with ❤ · Theme: Indigo & Emerald</span>
+<div class="panel-card" style="text-align:center;">
+  <div class="card-content">
+    <span class="muted">© {year} Smart Fire Prediction HSEL · Crafted with ❤ · Theme: Indigo & Emerald</span>
+  </div>
 </div>
 """, unsafe_allow_html=True)
