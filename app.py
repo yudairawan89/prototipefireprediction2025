@@ -10,7 +10,7 @@ import folium
 # Page Config
 # =========================
 st.set_page_config(
-    page_title="Smart Fire Prediction",
+    page_title="UHTP Smart Fire Prediction",
     page_icon="🔥",
     layout="wide"
 )
@@ -161,7 +161,7 @@ with hdr_l:
     st.image("logo.png", width=86)
 with hdr_m:
     st.markdown("""
-        <h1 class="title">Smart Fire Prediction</h1>
+        <h1 class="title">UHTP Smart Fire Prediction</h1>
         <p class="sub muted">
             Prediksi <b>risiko kebakaran hutan</b> real-time berbasis
             <b>Hybrid Machine Learnin</b> dari data sensor IoT.
@@ -356,10 +356,11 @@ st.markdown("<br>", unsafe_allow_html=True)
 st.markdown(f"""
 <div class="panel-card" style="text-align:center;">
   <div class="card-content">
-    <span class="muted">© {year} Smart Fire Prediction · Dirancang Oleh Tim Dosen UHTP</span>
+    <span class="muted">© {year} UHTP Smart Fire Prediction · Dirancang Oleh Tim Dosen UHTP</span>
   </div>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
