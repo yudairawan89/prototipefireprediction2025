@@ -169,11 +169,8 @@ with hdr_m:
         <a class="link-btn" href="https://docs.google.com/spreadsheets/d/1epkIp2U1okjCfXOoz_bkgey4kYa30EtmWlLB6c_911Y/edit?gid=0#gid=0" target="_blank">☁️&nbsp; Data Cloud</a>
     """, unsafe_allow_html=True)
 with hdr_r:
-    r1, r2 = st.columns(2, gap="small")
-    with r1:
-        st.image("logo smft.png", use_container_width=True)
-    with r2:
-        st.image("upi.png", use_container_width=True)
+    # HANYA logo smft di sisi kanan
+    st.image("logo smft.png", use_container_width=True)
 
 st.markdown('</div>', unsafe_allow_html=True)  # close card-content
 st.markdown('</div>', unsafe_allow_html=True)  # close panel-card
@@ -253,7 +250,7 @@ else:
     # --------- Ringkasan + Map ----------
     col_a, col_b = st.columns([1.2, 1.2])
 
-    # LEFT COLUMN (summary + 2 DROPDOWNS you requested)
+    # LEFT COLUMN (summary + 2 DROPDOWNS)
     with col_a:
         st.markdown(f"""
             <div class="metric-card">
@@ -360,11 +357,3 @@ st.markdown(f"""
   </div>
 </div>
 """, unsafe_allow_html=True)
-
-
-
-
-
-
-
-
