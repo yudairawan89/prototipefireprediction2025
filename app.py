@@ -253,6 +253,7 @@ else:
     # --------- Ringkasan + Map ----------
     col_a, col_b = st.columns([1.2, 1.2])
 
+    # LEFT COLUMN (summary + 2 DROPDOWNS you requested)
     with col_a:
         st.markdown(f"""
             <div class="metric-card">
@@ -267,6 +268,46 @@ else:
             </div>
         """, unsafe_allow_html=True)
 
+        # === DROPDOWN 1: Keterangan Aplikasi ===
+        with st.expander("ℹ️ Keterangan Aplikasi", expanded=False):
+            st.markdown("#### 🧠 Tentang Model")
+            st.markdown("""
+            **HSEL (Hybrid Stacking Ensemble Learning)** menggabungkan beberapa algoritma
+            pembelajaran mesin dengan *stacked generalization* serta optimasi hyperparameter.
+            Input dari IoT: **Suhu, RH, Curah Hujan, Angin, Kelembaban Tanah**.
+            Output: level risiko **Low, Moderate, High, Very High**.
+            """)
+            st.markdown("---")
+            st.markdown("#### 📘 Cara Membaca Level Risiko")
+            st.markdown("""
+            - **Low** — kondisi aman, pemantauan rutin.
+            - **Moderate** — waspada, lakukan patroli berkala.
+            - **High** — siaga, siapkan sumber daya pemadaman.
+            - **Very High** — kondisi kritis, lakukan mitigasi segera.
+            """)
+
+        # === DROPDOWN 2: Legenda Risiko ===
+        with st.expander("🏷️ Legenda Tingkat Risiko", expanded=False):
+            c1, c2, c3, c4 = st.columns(4)
+            legend_data = [
+                ("Low / Rendah", "#DBEAFE", "#1E3A8A", "Intensitas rendah, mudah dikendalikan."),
+                ("Moderate / Sedang", "#D1FAE5", "#064E3B", "Masih dapat dikendalikan."),
+                ("High / Tinggi", "#FFEDD5", "#7C2D12", "Sulit dikendalikan."),
+                ("Very High / Sangat Tinggi", "#FEE2E2", "#7F1D1D", "Sangat sulit dikendalikan."),
+            ]
+            for (lab, bgc, tc, desc), col in zip(legend_data, [c1, c2, c3, c4]):
+                with col:
+                    st.markdown(
+                        f"""
+                        <div class="metric-card" style="background:{bgc}; color:{tc};">
+                            <b>{lab}</b><br>
+                            <span style="color:{tc}; font-size:13px;">{desc}</span>
+                        </div>
+                        """,
+                        unsafe_allow_html=True
+                    )
+
+    # RIGHT COLUMN (map)
     with col_b:
         st.markdown('<div class="map-card">', unsafe_allow_html=True)
         st.markdown('<div class="map-title-bar">🗺️ Peta Prediksi</div>', unsafe_allow_html=True)
@@ -303,65 +344,6 @@ else:
         ).add_to(m)
         folium_static(m, width=520, height=350)
         st.markdown('</div>', unsafe_allow_html=True)  # close map-card
-
-st.markdown('</div>', unsafe_allow_html=True)  # close card-content
-st.markdown('</div>', unsafe_allow_html=True)  # close panel-card
-
-# =========================
-# KETERANGAN APLIKASI (dikembalikan)
-# =========================
-st.markdown("<br>", unsafe_allow_html=True)
-st.markdown('<div class="panel-card">', unsafe_allow_html=True)
-st.markdown('<div class="title-bar">ℹ️ Keterangan Aplikasi</div>', unsafe_allow_html=True)
-st.markdown('<div class="card-content">', unsafe_allow_html=True)
-
-info_l, info_r = st.columns(2)
-with info_l:
-    st.markdown("### 🧠 Tentang Model")
-    st.markdown("""
-    **HSEL (Hybrid Stacking Ensemble Learning)** menggabungkan beberapa algoritma
-    pembelajaran mesin dengan *stacked generalization* serta optimasi hyperparameter.
-    Input: **Suhu, RH, Curah Hujan, Angin, Kelembaban Tanah** dari perangkat IoT.
-    Output: level risiko **Low, Moderate, High, Very High**.
-    """)
-with info_r:
-    st.markdown("### 📘 Cara Membaca Level Risiko")
-    st.markdown("""
-    - **Low**: kondisi aman, potensi kecil, pemantauan rutin.  
-    - **Moderate**: waspada, lakukan patroli berkala.  
-    - **High**: siaga, siapkan sumber daya pemadaman.  
-    - **Very High**: kondisi kritis, lakukan mitigasi segera.
-    """)
-
-st.markdown('</div>', unsafe_allow_html=True)  # close card-content
-st.markdown('</div>', unsafe_allow_html=True)  # close panel-card
-
-# =========================
-# Risk Legend (judul di dalam frame)
-# =========================
-st.markdown("<br>", unsafe_allow_html=True)
-st.markdown('<div class="panel-card">', unsafe_allow_html=True)
-st.markdown('<div class="title-bar">🏷️ Legenda Tingkat Risiko</div>', unsafe_allow_html=True)
-st.markdown('<div class="card-content">', unsafe_allow_html=True)
-
-legend_cols = st.columns(4)
-legend_data = [
-    ("Low / Rendah", "#DBEAFE", "#1E3A8A", "Intensitas rendah, mudah dikendalikan."),
-    ("Moderate / Sedang", "#D1FAE5", "#064E3B", "Masih dapat dikendalikan."),
-    ("High / Tinggi", "#FFEDD5", "#7C2D12", "Sulit dikendalikan."),
-    ("Very High / Sangat Tinggi", "#FEE2E2", "#7F1D1D", "Sangat sulit dikendalikan."),
-]
-for (lab, bgc, tc, desc), col in zip(legend_data, legend_cols):
-    with col:
-        st.markdown(
-            f"""
-            <div class="metric-card" style="background:{bgc}; color:{tc};">
-                <b>{lab}</b><br>
-                <span style="color:{tc}; font-size:13px;">{desc}</span>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
 
 st.markdown('</div>', unsafe_allow_html=True)  # close card-content
 st.markdown('</div>', unsafe_allow_html=True)  # close panel-card
