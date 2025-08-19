@@ -16,41 +16,18 @@ st.set_page_config(
 )
 
 # =========================
-# Theming (Light/Dark Toggle)
+# Static Theme (Light)
 # =========================
-if "dark" not in st.session_state:
-    st.session_state.dark = False
+BG = "#F6F7FB"
+PANEL = "rgba(255,255,255,0.82)"
+TEXT = "#0F172A"
+MUTED = "#475569"
+ACCENT = "#4F46E5"   # indigo
+ACCENT2 = "#059669"  # emerald
+BORDER = "rgba(15,23,42,0.08)"
+SHADOW = "0 10px 24px rgba(2,6,23,0.08)"
+GRAD = "linear-gradient(135deg, #EEF2FF 0%, #E6FFFB 100%)"
 
-with st.sidebar:
-    st.markdown("### ⚙️ Tampilan")
-    st.session_state.dark = st.toggle("Dark mode", value=st.session_state.dark)
-    st.caption("Ubah tema agar kontras & aksen warna menyesuaikan.")
-
-# Palet warna dinamis
-if st.session_state.dark:
-    BG = "#0B1220"
-    PANEL = "rgba(255,255,255,0.06)"
-    TEXT = "#E8EEF9"
-    MUTED = "#9FB0C8"
-    ACCENT = "#7C3AED"   # indigo/violet
-    ACCENT2 = "#10B981"  # emerald
-    BORDER = "rgba(255,255,255,0.12)"
-    SHADOW = "0 10px 30px rgba(0,0,0,0.55)"
-    GRAD = "linear-gradient(135deg, #1E293B 0%, #0B1220 100%)"
-else:
-    BG = "#F6F7FB"
-    PANEL = "rgba(255,255,255,0.72)"
-    TEXT = "#0F172A"
-    MUTED = "#475569"
-    ACCENT = "#4F46E5"   # indigo
-    ACCENT2 = "#059669"  # emerald
-    BORDER = "rgba(15,23,42,0.08)"
-    SHADOW = "0 10px 24px rgba(2,6,23,0.08)"
-    GRAD = "linear-gradient(135deg, #EEF2FF 0%, #E6FFFB 100%)"
-
-# =========================
-# Global Styles
-# =========================
 st.markdown(f"""
 <style>
     html, body, [data-testid="stAppViewContainer"] {{
@@ -94,14 +71,27 @@ st.markdown(f"""
     .section-title {{
         font-weight: 800; font-size: 18px; margin: 4px 0 12px 0;
     }}
-    /* Button style */
+    /* Button style – kontras & menyatu */
     .link-btn {{
-        padding: 8px 16px; border-radius: 10px; text-decoration: none;
-        color: white; background: {ACCENT};
+        display: inline-block;
+        padding: 10px 16px; border-radius: 12px; text-decoration: none;
+        color: #ffffff !important; background: linear-gradient(135deg,{ACCENT} 0%, {ACCENT2} 100%);
         border: 1px solid transparent;
-        transition: transform .05s ease;
+        box-shadow: {SHADOW};
+        transition: transform .05s ease, filter .2s ease;
+        font-weight: 600;
     }}
-    .link-btn:hover {{ transform: translateY(-1px); }}
+    .link-btn:hover {{ transform: translateY(-1px); filter: brightness(1.02); }}
+    /* Header kecil di atas card (untuk Peta Prediksi) */
+    .card-header {{
+        font-weight: 700; color: {MUTED};
+        margin: -10px -10px 12px -10px;
+        padding: 8px 12px;
+        border-bottom: 1px solid {BORDER};
+        border-top-left-radius: 14px;
+        border-top-right-radius: 14px;
+        background: rgba(255,255,255,0.35);
+    }}
 </style>
 """, unsafe_allow_html=True)
 
@@ -132,7 +122,7 @@ def convert_to_label(pred):
     }.get(pred, "Unknown")
 
 risk_styles = {
-    "Low / Rendah":   ("#1E3A8A", "#DBEAFE"),  # text, bg
+    "Low / Rendah":   ("#1E3A8A", "#DBEAFE"),
     "Moderate / Sedang": ("#064E3B", "#D1FAE5"),
     "High / Tinggi":  ("#7C2D12", "#FFEDD5"),
     "Very High / Sangat Tinggi": ("#7F1D1D", "#FEE2E2")
@@ -175,11 +165,10 @@ with hero_m:
     st.markdown(f"""
         <h1 class="title">Smart Fire Prediction HSEL</h1>
         <p class="sub muted">
-            Prediksi <b>risiko kebakaran hutan</b> secara real-time berbasis
-            <b>Hybrid Stacking Ensemble Learning</b> dengan data sensor lingkungan.
-            Aksen warna: <span style="color:{ACCENT}">Indigo</span> & <span style="color:{ACCENT2}">Emerald</span>.
+            Prediksi <b>risiko kebakaran hutan</b> real-time berbasis
+            <b>Hybrid Stacking Ensemble Learning</b> dari data sensor lingkungan.
         </p>
-        <a class="link-btn" href="https://docs.google.com/spreadsheets/d/1epkIp2U1okjCfXOoz_bkgey4kYa30EtmWlLB6c_911Y/edit?gid=0#gid=0" target="_blank">Data Cloud</a>
+        <a class="link-btn" href="https://docs.google.com/spreadsheets/d/1epkIp2U1okjCfXOoz_bkgey4kYa30EtmWlLB6c_911Y/edit?gid=0#gid=0" target="_blank">☁️&nbsp; Data Cloud</a>
     """, unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
@@ -258,35 +247,38 @@ with container:
             risk_text, risk_bg = risk_styles.get(risk_label, ("#111827", "#E5E7EB"))
 
             # ------------------ Metric Cards ------------------
-            m1, m2, m3, m4, m5, m6 = st.columns(6)
+            # (hapus tile Risiko -> hanya 5 metrik)
+            m1, m2, m3, m4, m5 = st.columns(5)
             m1.metric("🌡 Suhu (°C)", f"{last_num[fitur[0]]:.1f}")
             m2.metric("💧 RH (%)", f"{last_num[fitur[1]]:.1f}")
             m3.metric("🌧 Curah (mm)", f"{last_num[fitur[2]]:.1f}")
             m4.metric("💨 Angin (m/s)", f"{last_num[fitur[3]]:.1f}")
             m5.metric("🪴 Tanah (%)", f"{last_num[fitur[4]]:.1f}")
-            m6.metric("🔥 Risiko", risk_label)
 
             st.markdown("<br>", unsafe_allow_html=True)
 
-            # ------------------ Risk Badge + Last Updated ------------------
+            # ------------------ Ringkasan + Map ------------------
             col_a, col_b = st.columns([1.2, 1.2])
+
             with col_a:
                 st.markdown(f"""
                     <div class="metric-card glass">
-                        <div style="display:flex; align-items:center; gap:10px;">
+                        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
                             <span class="chip" style="background:{risk_bg}; color:{risk_text}">🔥 {risk_label}</span>
                             <span class="muted">Terakhir diperbarui: <b>{hari}, {tanggal}</b></span>
                         </div>
                         <div class="muted" style="margin-top:8px;">
-                            Lokasi: <b>Pekanbaru</b> · Koordinat: <code>-0.5071, 101.4478</code>
+                            Lokasi: <b>Pekanbaru</b> · Koordinat:
+                            <span style="color:#16A34A;">-0.5071, 101.4478</span>
                         </div>
                     </div>
                 """, unsafe_allow_html=True)
 
             with col_b:
-                # Map card
                 st.markdown('<div class="metric-card glass">', unsafe_allow_html=True)
-                st.markdown('<div class="muted" style="margin-bottom:6px;">Peta Prediksi</div>', unsafe_allow_html=True)
+                # Judul dipindah ke header frame card
+                st.markdown('<div class="card-header">Peta Prediksi</div>', unsafe_allow_html=True)
+
                 pekanbaru_coords = [-0.5071, 101.4478]
                 color_map = {
                     "Low / Rendah": "blue",
@@ -346,7 +338,7 @@ with right:
         """)
 
 # =========================
-# Risk Legend (ringkas, modern)
+# Risk Legend (modern)
 # =========================
 st.markdown("<br>", unsafe_allow_html=True)
 st.markdown('<div class="glass" style="padding:16px;">', unsafe_allow_html=True)
@@ -382,4 +374,3 @@ st.markdown(f"""
   <span class="muted">© {year} Smart Fire Prediction HSEL · Crafted with ❤ · Theme: Indigo & Emerald</span>
 </div>
 """, unsafe_allow_html=True)
-
