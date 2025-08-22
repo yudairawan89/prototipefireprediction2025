@@ -243,7 +243,7 @@ else:
     m2.metric("💧 Kelembaban Udara RH (%)", f"{last_num[fitur[1]]:.1f}")
     m3.metric("🌧 Curah Hujan (mm)", f"{last_num[fitur[2]]:.1f}")
     m4.metric("💨 Kecepatan Angin (m/s)", f"{last_num[fitur[3]]:.1f}")
-    m5.metric("🪴 Kelembaban Tanah (%)", f"{last_num[fitur[4]]:.1f}")
+    m5.metric("🌱 Kelembaban Tanah (%)", f"{last_num[fitur[4]]:.1f}")
 
     st.markdown("<br>", unsafe_allow_html=True)
 
@@ -357,5 +357,6 @@ st.markdown(f"""
   </div>
 </div>
 """, unsafe_allow_html=True)
+
 
 
