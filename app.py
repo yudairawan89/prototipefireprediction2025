@@ -309,7 +309,7 @@ else:
         st.markdown('<div class="map-card">', unsafe_allow_html=True)
         st.markdown('<div class="map-title-bar">🗺️ Peta Prediksi</div>', unsafe_allow_html=True)
 
-        pekanbaru_coords = [-0.5071, 101.4478]
+        pekanbaru_coords = [0.48280, 101.45698]
         color_map = {
             "Low / Rendah": "blue",
             "Moderate / Sedang": "green",
@@ -357,6 +357,7 @@ st.markdown(f"""
   </div>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
